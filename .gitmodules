@@ -1,0 +1,3 @@
+[submodule "part-3/phonebook-backend"]
+	path = part-3/phonebook-backend
+	url = https://github.com/nochzato/phonebook-backend.git
