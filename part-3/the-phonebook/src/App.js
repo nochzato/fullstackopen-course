@@ -114,6 +114,13 @@ const App = () => {
               )
             );
           })
+          .then(() => {
+            setMessage(`${currentPerson.name} updated`);
+
+            setTimeout(() => {
+              setMessage("");
+            }, 2500);
+          })
           .catch((error) => {
             setIsError(true);
             setMessage(
@@ -125,12 +132,6 @@ const App = () => {
               setIsError(false);
             }, 2500);
           });
-
-        setMessage(`${currentPerson.name} updated`);
-
-        setTimeout(() => {
-          setMessage("");
-        }, 2500);
       }
     } else {
       const newPerson = {
@@ -140,13 +141,23 @@ const App = () => {
 
       personsService
         .createObject(newPerson)
-        .then((returnedPerson) => setPersons(persons.concat(returnedPerson)));
+        .then((returnedPerson) => setPersons(persons.concat(returnedPerson)))
+        .then(() => {
+          setMessage(`${newPerson.name} was added to the phonebook`);
 
-      setMessage(`${newPerson.name} was added to the phonebook`);
+          setTimeout(() => {
+            setMessage("");
+          }, 2500);
+        })
+        .catch((error) => {
+          setIsError(true);
+          setMessage(error.response.data.error);
 
-      setTimeout(() => {
-        setMessage("");
-      }, 2500);
+          setTimeout(() => {
+            setMessage("");
+            setIsError(false);
+          }, 2500);
+        });
     }
   };
 

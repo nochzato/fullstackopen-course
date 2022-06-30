@@ -6,29 +6,25 @@ const Notification = ({ message, isError }) => {
     return null;
   }
 
-  if (isError) {
-    const notificationsStyle = {
-      color: "red",
-      borderStyle: "solid",
-      borderRadius: 5,
-      padding: 10,
-      fontSize: 20,
-      background: "lightgrey",
-    };
+  const notificationsStyle = isError
+    ? {
+        color: "red",
+        borderStyle: "solid",
+        borderRadius: 5,
+        padding: 10,
+        fontSize: 20,
+        background: "lightgrey",
+      }
+    : {
+        color: "green",
+        borderStyle: "solid",
+        borderRadius: 5,
+        padding: 10,
+        fontSize: 20,
+        background: "lightgrey",
+      };
 
-    return <div style={notificationsStyle}>{message}</div>;
-  } else {
-    const notificationsStyle = {
-      color: "green",
-      borderStyle: "solid",
-      borderRadius: 5,
-      padding: 10,
-      fontSize: 20,
-      background: "lightgrey",
-    };
-
-    return <div style={notificationsStyle}>{message}</div>;
-  }
+  return <div style={notificationsStyle}>{message}</div>;
 };
 
 const Filter = ({ onChange }) => (
