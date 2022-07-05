@@ -1,8 +1,8 @@
-POST http://localhost:3003/api/blogs
+PUT http://localhost:3003/api/blogs/62c0a2a4391d8fa7d6eac52a
 Content-Type: application/json
 
 {
-  "title": "Bombass",
+  "title": "Donetsk",
   "author": "Petro Poroshenko",
   "url": "petro.org",
   "likes": 34245

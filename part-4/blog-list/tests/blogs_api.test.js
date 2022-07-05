@@ -21,82 +21,152 @@ const initialBlogs = [
 
 beforeEach(async () => {
   await Blog.deleteMany({});
-  let blogObject = new Blog(initialBlogs[0]);
-  await blogObject.save();
-  blogObject = new Blog(initialBlogs[1]);
-  await blogObject.save();
+
+  for (let blog of initialBlogs) {
+    let blogObject = new Blog(blog);
+    await blogObject.save();
+  }
 });
 
-test("right amount of blogs", async () => {
-  const response = await api.get("/api/blogs");
+describe("get", () => {
+  test("returns right amount of blogs", async () => {
+    const response = await api.get("/api/blogs");
 
-  expect(response.body).toHaveLength(initialBlogs.length);
+    expect(response.body).toHaveLength(initialBlogs.length);
+  });
+
+  test("returns key named id", async () => {
+    const response = await api.get("/api/blogs");
+
+    expect(response.body[0].id).toBeDefined();
+  });
 });
 
-test("id is named after itself", async () => {
-  const response = await api.get("/api/blogs");
+describe("post", () => {
+  test("adds one blog properly", async () => {
+    const newBlog = {
+      title: "Title Three",
+      author: "Author Three",
+      url: "smth.com",
+      likes: 31,
+    };
 
-  expect(response.body[0].id).toBeDefined();
+    await api
+      .post("/api/blogs")
+      .send(newBlog)
+      .expect(201)
+      .expect("Content-Type", /application\/json/);
+
+    const response = await api.get("/api/blogs");
+
+    const titles = response.body.map((r) => r.title);
+
+    expect(response.body).toHaveLength(initialBlogs.length + 1);
+    expect(titles).toContain("Title Three");
+  });
+
+  test("replace missing likes with 0", async () => {
+    const newBlog = {
+      title: "New Blog",
+      author: "Some author",
+      url: "somesite.com",
+    };
+
+    await api
+      .post("/api/blogs")
+      .send(newBlog)
+      .expect(201)
+      .expect("Content-Type", /application\/json/);
+
+    const response = await api.get("/api/blogs");
+
+    const lastBlog = response.body[response.body.length - 1];
+
+    expect(lastBlog.likes).toBe(0);
+  });
+
+  test("sends status 400 if url or title is missing", async () => {
+    const newBlog = {
+      author: "some author",
+      url: "someurl.url",
+      likes: 12,
+    };
+
+    await api.post("/api/blogs").send(newBlog).expect(400);
+
+    const anotherBlog = {
+      title: "some title",
+      author: "some author",
+      likes: 12,
+    };
+
+    await api.post("/api/blogs").send(anotherBlog).expect(400);
+  });
 });
 
-test("post adds blog", async () => {
-  const newBlog = {
-    title: "Title Three",
-    author: "Author Three",
-    url: "smth.com",
-    likes: 31,
-  };
+describe("delete", () => {
+  test("removes one blog as expected", async () => {
+    const blogs = (await api.get("/api/blogs")).body;
 
-  await api
-    .post("/api/blogs")
-    .send(newBlog)
-    .expect(201)
-    .expect("Content-Type", /application\/json/);
+    const blogToDelete = blogs[0];
 
-  const response = await api.get("/api/blogs");
+    await api.delete(`/api/blogs/${blogToDelete.id}`).expect(204);
 
-  const titles = response.body.map((r) => r.title);
+    const response = await api.get("/api/blogs");
+    const ids = response.body.map((blog) => blog.id);
 
-  expect(response.body).toHaveLength(initialBlogs.length + 1);
-  expect(titles).toContain("Title Three");
+    expect(ids).not.toContain(blogToDelete.id);
+  });
+
+  test("sends 400 if id not found", async () => {
+    await api.delete("/api/blogs/123").expect(400);
+  });
 });
 
-test("if likes is missing it's replaced with 0", async () => {
-  const newBlog = {
-    title: "New Blog",
-    author: "Some author",
-    url: "somesite.com",
-  };
+describe("put", () => {
+  test("updates blog properly", async () => {
+    const someBlog = (await api.get("/api/blogs")).body[0];
 
-  await api
-    .post("/api/blogs")
-    .send(newBlog)
-    .expect(201)
-    .expect("Content-Type", /application\/json/);
+    const blogToUpdate = {
+      ...someBlog,
+      title: "another title",
+    };
 
-  const response = await api.get("/api/blogs");
+    const returnedBlog = (
+      await api.put(`/api/blogs/${blogToUpdate.id}`).send(blogToUpdate)
+    ).body;
 
-  const lastBlog = response.body[response.body.length - 1];
+    expect(returnedBlog).toEqual(blogToUpdate);
 
-  expect(lastBlog.likes).toBe(0);
-});
+    const response = await api.get("/api/blogs");
+    const titles = response.body.map((blog) => blog.title);
 
-test("if title or url is missing send status 400", async () => {
-  const newBlog = {
-    author: "some author",
-    url: "someurl.url",
-    likes: 12,
-  };
+    expect(titles).toContain(blogToUpdate.title);
+  });
 
-  await api.post("/api/blogs").send(newBlog).expect(400);
+  test("doesn't update if missing title or url", async () => {
+    const someBlog = (await api.get("/api/blogs")).body[0];
 
-  const anotherBlog = {
-    title: "some title",
-    author: "some author",
-    likes: 12,
-  };
+    const blogWithoutTitle = {
+      ...someBlog,
+      title: undefined,
+    };
 
-  await api.post("/api/blogs").send(anotherBlog).expect(400);
+    await api
+      .put(`/api/blogs/${blogWithoutTitle.id}`)
+      .send(blogWithoutTitle)
+      .expect(400);
+
+    const blogWithoutUrl = {
+      ...someBlog,
+      url: undefined,
+    };
+
+    await api
+      .put(`/api/blogs/${blogWithoutUrl.id}`)
+      .send(blogWithoutUrl)
+      .expect(400);
+  });
 });
 
 afterAll(() => {
